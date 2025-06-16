@@ -66,6 +66,7 @@ async def send_telegram(msg):
 async def generate_cryptic_message():
     prompt = (
         "Senin adın NightCrawler. Bir ipucu bulunduğuna dair bir Telegram mesajı yaz. Mesajı İngilizce yaz. Örneğin: \"Its NightCrawler, got something for ya, you might wanna check it out...\""
+        )
     ne try:
         response = await client.chat.completions.create(
             model=OPENAI_MODEL,
