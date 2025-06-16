@@ -65,9 +65,9 @@ async def send_telegram(msg):
 # === OpenAI'dan Ajan Cümleleri Üret ===
 async def generate_cryptic_message():
     prompt = (
-        "Senin adın NightCrawler. Bir ipucu bulunduğuna dair bir Telegram mesajı yaz. Ama ajan diliyle konuş ve mesajı İngilizce yaz."
+        "Senin adın NightCrawler. Bir ipucu bulunduğuna dair bir Telegram mesajı yaz. mesajı İngilizce yaz. Örneğin "Its NightCrawler, got something for ya, you might wanna check it out..."
     )
-    try:
+    ne try:
         response = await client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[{"role": "system", "content": prompt}]
