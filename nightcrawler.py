@@ -65,9 +65,10 @@ async def send_telegram(msg):
 # === OpenAI'dan Ajan Cümleleri Üret ===
 async def generate_cryptic_message():
     prompt = (
-        "Senin adın NightCrawler. Bir ipucu bulunduğuna dair bir Telegram mesajı yaz. Mesajı İngilizce yaz. Örneğin: \"Its NightCrawler, got something for ya, you might wanna check it out...\""
-        )
-    ne try:
+        "Senin adın NightCrawler. Bir ipucu bulunduğuna dair bir Telegram mesajı yaz. Mesajı İngilizce yaz. "
+        "Örneğin: \"Its NightCrawler, got something for ya, you might wanna check it out...\""
+    )
+    try:
         response = await client.chat.completions.create(
             model=OPENAI_MODEL,
             messages=[{"role": "system", "content": prompt}]
@@ -96,6 +97,9 @@ async def generate_daily_report(last_trigger_time, last_trigger_info):
 
 # === Zaman ve Planlama ===
 async def agent_loop():
+    # İlk başta Telegram'a startup mesajı atalım
+    await send_telegram("NightCrawler is active, all systems up and running. 🕷️")
+
     last_trigger_time = None
     last_trigger_info = ""
     daily_report_hour = 9
