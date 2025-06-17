@@ -5,6 +5,9 @@ on:
     # Her saat başında çalıştır (IST/GMT farkına göre ayarlayabilirsin)
     - cron: '0 * * * *'
   workflow_dispatch: # Manuel çalıştırmaya da izin ver
+concurrency:
+  group: nightcrawler-agent
+  cancel-in-progress: true
 
 jobs:
   run-nightcrawler:
