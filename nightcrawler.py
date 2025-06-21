@@ -40,7 +40,7 @@ def selenium_check_ostim_site():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
     try:
-        url = "https://ostimteknik.edu.tr/blog/duyuru-5772/page/12"
+        url = "https://ostimteknik.edu.tr/blog/duyuru-5772"
         driver.get(url)
         time.sleep(3)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
@@ -74,7 +74,7 @@ async def send_telegram(msg):
 async def generate_cryptic_message():
     prompt = (
         "Senin adın NightCrawler. Bir ipucu bulunduğuna dair bir Telegram mesajı yaz. Mesajı İngilizce yaz. "
-        "Örneğin: \"It's NightCrawler, got something for ya...\""
+        "Örneğin: \"It's NightCrawler, got something for ya...\" Bu tarzda olsun birebir aynı kelimeleri yazmana gerek yok."
     )
     try:
         response = await client.chat.completions.create(
