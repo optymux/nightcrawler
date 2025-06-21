@@ -1,34 +1,32 @@
 import os
 import asyncio
 import time
-from datetime import datetime, timedelta
-
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from openai import AsyncOpenAI
-
 from telegram import Bot
 import openai
 
-
-# Ajan Ayarları
+# ========== Ajan Ayarları ==========
 TELEGRAM_TOKEN = os.environ['TELEGRAM_TOKEN']
 TELEGRAM_CHAT_ID = os.environ['TELEGRAM_CHAT_ID']
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-openai.api_key = OPENAI_API_KEY
 OPENAI_MODEL = "gpt-4.1-mini"
+
+openai.api_key = OPENAI_API_KEY
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 NIGHTCRAWLER_PERSONA = (
-    "Sen NightCrawler adında bir gölge ajanısın. Ahmet Erol Bayrak'a çalışıyorsun, o senin patronun. Az ve öz konuşursun. "
-    "Casus gibi, stratejik ve soğukkanlı cevaplar verirsin. Film repliği veya kod adı göndermeleriyle konuşabilirsin."
+    "Sen NightCrawler adında bir gölge ajanısın. Ahmet Erol Bayrak'a çalışıyorsun, o senin patronun. "
+    "Az ve öz konuşursun. Casus gibi, stratejik ve soğukkanlı cevaplar verirsin."
 )
 
-# === OSYM Kontrol Fonksiyonu ===
-def selenium_check_osym_site():
+# ========== OSTİM Sayfası Kontrol ==========
+def selenium_check_ostim_site():
     result = False
     trigger_line = ""
     chrome_options = Options()
@@ -42,12 +40,22 @@ def selenium_check_osym_site():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
     try:
-        driver.get("https://sonuc.osym.gov.tr")
+        url = "https://ostimteknik.edu.tr/blog/duyuru-5772/page/12"
+        driver.get(url)
         time.sleep(3)
         soup = BeautifulSoup(driver.page_source, 'html.parser')
         page_text = soup.get_text().lower()
+
+        keywords = [
+            "2025-2026 akademik takvim",
+            "akademik takvim yayınlandı",
+            "2025-2026 eğitim öğretim yılı",
+            "akademik takvim"
+        ]
+
         for line in page_text.split('\n'):
-            if "2025" in line and ("dgs" in line or "dikey geçiş sınavı" in line):
+            line_clean = line.strip().lower()
+            if any(keyword in line_clean for keyword in keywords):
                 result = True
                 trigger_line = line.strip()[:120]
                 break
@@ -57,16 +65,16 @@ def selenium_check_osym_site():
         driver.quit()
     return result, trigger_line
 
-# === Telegram'a Mesaj At ===
+# ========== Telegram Bildirim ==========
 async def send_telegram(msg):
     bot = Bot(token=TELEGRAM_TOKEN)
     await bot.send_message(chat_id=TELEGRAM_CHAT_ID, text=msg)
 
-# === OpenAI'dan Ajan Cümleleri Üret ===
+# ========== OpenAI Mesaj Üretimi ==========
 async def generate_cryptic_message():
     prompt = (
         "Senin adın NightCrawler. Bir ipucu bulunduğuna dair bir Telegram mesajı yaz. Mesajı İngilizce yaz. "
-        "Örneğin: \"Its NightCrawler, got something for ya, you might wanna check it out...\""
+        "Örneğin: \"It's NightCrawler, got something for ya...\""
     )
     try:
         response = await client.chat.completions.create(
@@ -83,8 +91,8 @@ async def generate_daily_report(last_trigger_time, last_trigger_info):
     else:
         extra = f"Son tespit: {last_trigger_time.strftime('%H:%M:%S')} -> {last_trigger_info}"
     prompt = (
-        "Bir casus gibi, çok kısa ve doğrudan günlük operasyon raporu Telegram mesajı yaz. "
-        f"Sessiz yaşandıysa vurgula. Bilgi: {extra}"
+        "Henüz istenen filtrelerde bir olmadığını resmi bir dille belirt."
+        f"Bilgi: {extra}"
     )
     try:
         response = await client.chat.completions.create(
@@ -95,11 +103,8 @@ async def generate_daily_report(last_trigger_time, last_trigger_info):
     except:
         return "NC: Gece sessiz geçti, kıpırtı yok."
 
-# === Zaman ve Planlama ===
+# ========== Ajan Döngüsü ==========
 async def agent_loop():
-    # İlk başta Telegram'a startup mesajı atalım
-    await send_telegram("NightCrawler is active, all systems up and running. 🕷️")
-
     last_trigger_time = None
     last_trigger_info = ""
     daily_report_hour = 9
@@ -109,7 +114,7 @@ async def agent_loop():
         now = datetime.now()
 
         # SAATLİK KONTROL
-        found, trigger_line = selenium_check_osym_site()
+        found, trigger_line = selenium_check_ostim_site()
         if found:
             msg = await generate_cryptic_message()
             msg += f"\n[Tetikleyici: {trigger_line}]"
@@ -117,7 +122,7 @@ async def agent_loop():
             last_trigger_time = now
             last_trigger_info = trigger_line
 
-        # GÜNLÜK RAPOR: Her gün belirli saatte
+        # GÜNLÜK RAPOR
         if now.hour == daily_report_hour and (not daily_reported_date or daily_reported_date != now.date()):
             report = await generate_daily_report(last_trigger_time, last_trigger_info)
             await send_telegram(report)
@@ -127,5 +132,10 @@ async def agent_loop():
 
         await asyncio.sleep(60 * 60)
 
+# ========== Başlatıcı ==========
+async def main():
+    await send_telegram("NightCrawler is active, all systems are functional. 🕷️")
+    await agent_loop()
+
 if __name__ == "__main__":
-    asyncio.run(agent_loop())
+    asyncio.run(main())
