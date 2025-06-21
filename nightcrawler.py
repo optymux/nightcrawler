@@ -134,7 +134,6 @@ async def agent_loop():
 
 # ========== Başlatıcı ==========
 async def main():
-    await send_telegram("NightCrawler is active, all systems are functional. 🕷️")
     await agent_loop()
 
 if __name__ == "__main__":
